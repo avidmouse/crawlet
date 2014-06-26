@@ -1,4 +1,4 @@
 crawlet
 =======
 
-simple scala crawler engine.
+simple scala crawler scaffold.
