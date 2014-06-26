@@ -31,7 +31,7 @@ trait Crawler {
     }
   }
 
-  private[crawler] def execute(path: Path, req: Path => concurrent.Future[_]) {
+  private[crawlet] def execute(path: Path, req: Path => concurrent.Future[_]) {
     taskCount.incrementAndGet()
     concurrent.Future()(executionContext).flatMap(_ => req(path)).onComplete {
       case util.Success(v) =>
