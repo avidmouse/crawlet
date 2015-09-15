@@ -1,15 +1,15 @@
 package com.avidmouse.crawlet
 
+import akka.actor.{Props, ActorSystem}
+import akka.stream.ActorMaterializer
+
+import com.avidmouse.crawlet.task.Task
+
 /**
  * @author avid mouse
  * @version 1.0, 09/15/2015
  */
 trait Crawlet extends App {
-
-  import akka.actor.{Props, ActorSystem}
-  import akka.stream.ActorMaterializer
-
-  import com.avidmouse.crawlet.task.Task
 
   implicit val system = ActorSystem("Crawlet")
 

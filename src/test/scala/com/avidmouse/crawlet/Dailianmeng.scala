@@ -1,5 +1,6 @@
 package com.avidmouse.crawlet
 
+import akka.actor.ActorRef
 import akka.http.scaladsl.model.HttpResponse
 
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -9,6 +10,8 @@ import org.jsoup.Jsoup
 import scala.collection.convert.wrapAsScala._
 
 import task._
+
+import scala.concurrent.Future
 
 /**
  * @author avid mouse
@@ -52,6 +55,16 @@ object Dailianmeng extends Crawlet {
 
   override def config = Task.Config("贷联盟黑名单", 1, Some(2000))
 
+  class Save[T](val parse: HttpResponse => Future[T]) extends Action[T] {
+    override def exec(fetch: Fetch, parsed: T, taskRef: ActorRef) {
+      println("save:" + fetch.uri + ";" + parsed)
+    }
+  }
+
+  object Save {
+    def apply[T](parse: HttpResponse => Future[T]): Save[T] = new Save(parse)
+  }
+
   start(Fetch("http://www.dailianmeng.com/p2pblacklist/index.html",
     Spawn(indexParse) {
       Spawn(tableParse) {
@@ -61,4 +74,3 @@ object Dailianmeng extends Crawlet {
   ))
 
 }
-

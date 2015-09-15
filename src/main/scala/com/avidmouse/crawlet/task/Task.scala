@@ -1,6 +1,6 @@
 package com.avidmouse.crawlet.task
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{ActorRef, Actor, ActorLogging, Props}
 
 /**
  * @author avid mouse
@@ -8,7 +8,9 @@ import akka.actor.{Actor, ActorLogging, Props}
  */
 object Task {
 
-  case class Config(name: String, maxThreads: Int, interval: Option[Long] = None)
+  case class Config(name: String, maxThreads: Int, interval: Option[Long] = None, listener: Option[ActorRef] = None)
+
+  case class Finished(nrOfFetch: Int)
 
   private final class Fetcher(config: Config) extends Actor with ActorLogging {
 
@@ -24,7 +26,6 @@ object Task {
         log.debug("Fetcher receive Fetch {}", uri)
         config.interval.foreach(Thread.sleep)
         val task = sender()
-        log.debug("Fetcher start Fetch {}", uri)
         Http().singleRequest(HttpRequest(uri = uri)).foreach { r =>
           log.debug("Fetcher exec act {}", uri)
           act(f, r, task)
@@ -39,32 +40,40 @@ class Task(conf: Task.Config) extends Actor with ActorLogging {
 
   import akka.routing.RoundRobinPool
 
-  import scala.util.{Failure, Success}
-
   var count = 0
+
+  var nrOfFetch = 0
 
   val fetchers = context.actorOf(RoundRobinPool(conf.maxThreads).props(Props(classOf[Task.Fetcher], conf)), "fetchRouter")
 
+  //start
+  conf.listener.foreach(_ ! conf)
+
   private def countDown(): Unit = {
     count -= 1
-    log.debug("Task count now is:" + count)
+    log.debug("Task count now is: {}", count)
     if (count == 0) {
       log.debug("Task Succeed")
+      conf.listener.foreach(_ ! Task.Finished(nrOfFetch))
       context.system.terminate()
     }
   }
 
   def receive = {
     case f: Fetch =>
-      log.debug("Task receive fetch {}", f.uri)
       count += 1
+      nrOfFetch += 1
+      log.debug("Task receive fetch {}: {}", nrOfFetch, f.uri)
       fetchers ! f
-    case Success(url) =>
-      log.debug("Task receive Success:" + url)
+      conf.listener.foreach(_ !(f, nrOfFetch))
+    case e@Fetch.Success(uri) =>
+      log.debug("Task receive Success: {}", uri)
       countDown()
-    case Failure(failure) =>
-      log.debug("Task receive Failure:" + failure.getMessage)
+      conf.listener.foreach(_ ! e)
+    case e@Fetch.Failure(uri, status) =>
+      log.debug("Task receive Failure: {}, status: {}", uri, status)
       countDown()
+      conf.listener.foreach(_ ! e)
   }
 
 }

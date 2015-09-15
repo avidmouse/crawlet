@@ -8,6 +8,8 @@ case class Fetch(uri: String, act: Action[_])
 
 object Fetch {
 
-  class Failure(url: String, status: akka.http.scaladsl.model.StatusCode) extends Exception(s"fetch url $url return code: $status")
+  case class Success(uri: String)
+
+  case class Failure(uri: String, status: akka.http.scaladsl.model.StatusCode)
 
 }

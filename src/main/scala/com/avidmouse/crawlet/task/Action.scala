@@ -4,7 +4,6 @@ import akka.actor.ActorRef
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 /**
  * @author avid mouse
@@ -20,10 +19,10 @@ trait Action[T] {
     case StatusCodes.OK =>
       parse(resp).foreach { parsed =>
         exec(fetch, parsed, taskRef)
-        taskRef ! Success(fetch.uri)
+        taskRef ! Fetch.Success(fetch.uri)
       }
     case status =>
-      taskRef ! Failure(new Fetch.Failure(fetch.uri, status))
+      taskRef ! Fetch.Failure(fetch.uri, status)
   }
 
 }
@@ -53,14 +52,4 @@ object Map {
   type Parse = HttpResponse => Future[String]
 
   def apply(parse: Parse)(act: Action[_]): Map = new Map(parse, act)
-}
-
-class Save[T](val parse: HttpResponse => Future[T]) extends Action[T] {
-  override def exec(fetch: Fetch, parsed: T, taskRef: ActorRef) {
-    println("save:" + fetch.uri + ";" + parsed)
-  }
-}
-
-object Save {
-  def apply[T](parse: HttpResponse => Future[T]): Save[T] = new Save(parse)
 }
