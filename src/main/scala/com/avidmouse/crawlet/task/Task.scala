@@ -55,7 +55,6 @@ class Task(conf: Task.Config) extends Actor with ActorLogging {
     if (count == 0) {
       log.debug("Task Succeed")
       conf.listener.foreach(_ ! Task.Finished(nrOfFetch))
-      context.system.terminate()
     }
   }
 

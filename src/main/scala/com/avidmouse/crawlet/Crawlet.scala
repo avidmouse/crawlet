@@ -19,10 +19,8 @@ trait Crawlet extends App {
 
   def config: Task.Config
 
-  val taskRef = system.actorOf(Props(classOf[task.Task], config), "task")
-
   def start(root: task.Fetch) {
-    taskRef ! root
+    system.actorOf(Props(classOf[task.Task], config), "task") ! root
   }
 
 }
