@@ -11,6 +11,8 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 trait Action[T] {
 
+  def id: Int
+
   def parse: HttpResponse => Future[T]
 
   def exec(fetch: Fetch, parsed: T, taskRef: ActorRef)
@@ -27,7 +29,7 @@ trait Action[T] {
 
 }
 
-class Spawn(val parse: Spawn.Parse, act: Action[_]) extends Action[Seq[String]] {
+class Spawn(val id: Int, val parse: Spawn.Parse, act: Action[_]) extends Action[Seq[String]] {
 
   override def exec(fetch: Fetch, uris: Seq[String], taskRef: ActorRef) {
     uris.foreach { uri =>
@@ -39,10 +41,10 @@ class Spawn(val parse: Spawn.Parse, act: Action[_]) extends Action[Seq[String]] 
 object Spawn {
   type Parse = HttpResponse => Future[Seq[String]]
 
-  def apply(parse: Parse)(act: Action[_]): Spawn = new Spawn(parse, act)
+  def apply(id: Int, parse: Parse)(act: Action[_]): Spawn = new Spawn(id, parse, act)
 }
 
-class Map(val parse: Map.Parse, act: Action[_]) extends Action[String] {
+class Map(val id: Int, val parse: Map.Parse, act: Action[_]) extends Action[String] {
   override def exec(fetch: Fetch, uri: String, taskRef: ActorRef) {
     taskRef ! Fetch(uri, act)
   }
@@ -51,5 +53,5 @@ class Map(val parse: Map.Parse, act: Action[_]) extends Action[String] {
 object Map {
   type Parse = HttpResponse => Future[String]
 
-  def apply(parse: Parse)(act: Action[_]): Map = new Map(parse, act)
+  def apply(id: Int, parse: Parse)(act: Action[_]): Map = new Map(id, parse, act)
 }

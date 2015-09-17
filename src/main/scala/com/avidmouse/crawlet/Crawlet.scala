@@ -9,7 +9,7 @@ import com.avidmouse.crawlet.task.Task
  * @author avid mouse
  * @version 1.0, 09/15/2015
  */
-trait Crawlet extends App {
+trait Crawlet {
 
   implicit val system = ActorSystem("Crawlet")
 
@@ -17,10 +17,6 @@ trait Crawlet extends App {
 
   implicit val materializer = ActorMaterializer()
 
-  def config: Task.Config
-
-  def start(root: task.Fetch) {
-    system.actorOf(Props(classOf[task.Task], config), "task") ! root
-  }
+  def createTask(config: Task.Config) = system.actorOf(Props(classOf[task.Task], config))
 
 }
